@@ -48,17 +48,6 @@ type ReviewDecision struct {
 	CreatedAt   time.Time
 }
 
-func (e Excursion) SampleResolution(decision ExcursionStatus) (SampleState, bool) {
-	switch decision {
-	case ExcursionCleared:
-		return SampleReceived, true
-	case ExcursionRejected:
-		return SampleDestroyed, true
-	default:
-		return "", false
-	}
-}
-
 func (s ExcursionStatus) IsResolved() bool {
 	return s == ExcursionCleared || s == ExcursionRejected
 }

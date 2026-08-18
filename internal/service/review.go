@@ -74,18 +74,21 @@ func (s *ReviewService) Decide(ctx context.Context, input DecideInput) (domain.E
 		}
 		now := s.clock.Now()
 		for _, batch := range items {
-			if batch.State != domain.SampleQuarantined {
-				continue
-			}
-			next, ok := excursion.SampleResolution(input.Decision)
-			if !ok {
-				return fmt.Errorf("unsupported review decision: %w", domain.ErrValidation)
-			}
-			batch.State = next
-			if next == domain.SampleDestroyed {
-				batch.QuarantineNote = strings.TrimSpace(input.Rationale)
-			} else {
+			switch input.Decision {
+			case domain.ExcursionCleared:
+				if batch.State != domain.SampleQuarantined {
+					continue
+				}
+				batch.State = domain.SampleReleased
 				batch.QuarantineNote = ""
+			case domain.ExcursionRejected:
+				if batch.State != domain.SampleQuarantined {
+					continue
+				}
+				batch.State = domain.SampleDestroyed
+				batch.QuarantineNote = strings.TrimSpace(input.Rationale)
+			default:
+				return fmt.Errorf("unsupported review decision: %w", domain.ErrValidation)
 			}
 			batch.UpdatedAt = now
 			if err := tx.UpdateSampleBatch(ctx, batch, batch.Version); err != nil {
